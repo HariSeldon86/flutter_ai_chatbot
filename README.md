@@ -10,29 +10,38 @@ A Flutter application that integrates with Together AI's API to provide an AI-po
 - 📚 Conversation history with persistent storage
 - 🗂️ Sidebar to manage and navigate conversations
 - ➕ Create new conversations with custom titles
+- 🎯 **Dynamic LLM model loading from Together AI API**
+- 📊 **Model information page** with detailed specs (context length, pricing, etc.)
+- 🎭 **Custom system prompts** for each conversation
 - 🔄 Continue previous conversations with full context
 - 🗑️ Delete conversations with swipe gesture
 - ⚙️ Easy settings management
+- ✏️ Edit conversation settings (title, model, system prompt)
 - 🎨 Material Design 3 UI
 
 ## Project Structure
 
 ```
 lib/
-├── main.dart                    # App entry point
-├── models/                      # Data models
-│   ├── chat_message.dart       # Chat message model
-│   ├── chat_response.dart      # API response model
-│   └── conversation.dart       # Conversation model with persistence
-├── services/                    # Business logic & API
-│   ├── chat_service.dart       # Together AI API integration
-│   └── storage_service.dart    # Secure storage for API key & conversations
-├── screens/                     # UI screens
-│   ├── chat_screen.dart        # Main chat interface with history
-│   └── settings_screen.dart    # API key configuration
-└── widgets/                     # Reusable components
-    ├── message_bubble.dart     # Chat message bubble widget
-    └── conversation_sidebar.dart # Conversation history sidebar
+├── main.dart                           # App entry point
+├── constants/                          # App constants
+│   └── llm_models.dart                # LLM model data structures
+├── models/                             # Data models
+│   ├── chat_message.dart              # Chat message model
+│   ├── chat_response.dart             # API response model
+│   └── conversation.dart              # Conversation model with persistence
+├── services/                           # Business logic & API
+│   ├── chat_service.dart              # Together AI API integration
+│   ├── model_service.dart             # Fetch available models from API
+│   └── storage_service.dart           # Secure storage for API key & conversations
+├── screens/                            # UI screens
+│   ├── chat_screen.dart               # Main chat interface with history
+│   ├── settings_screen.dart           # API key configuration
+│   └── model_info_screen.dart         # Detailed model information page
+└── widgets/                            # Reusable components
+    ├── message_bubble.dart            # Chat message bubble widget
+    ├── conversation_sidebar.dart      # Conversation history sidebar
+    └── conversation_settings_dialog.dart # Dialog for conversation settings
 ```
 
 ## Setup
@@ -73,7 +82,58 @@ flutter run
 ### Starting a New Conversation
 
 1. **Quick Start**: Just type a message and send - a conversation will be created automatically with your first message as the title
-2. **Custom Title**: Tap the "New Chat" floating button or use the sidebar menu to create a conversation with a custom title
+2. **Custom Configuration**: 
+   - Tap the "New Chat" floating button or use the sidebar menu
+   - Enter a conversation title
+   - Select an LLM model from the dropdown
+   - (Optional) Add a system prompt to customize the AI's behavior
+   - Tap "Save" to create the conversation
+
+### Available LLM Models
+
+Models are **dynamically loaded** from the Together AI API. The app fetches:
+- Model name and display name
+- Organization/creator
+- Context length (token capacity)
+- Pricing information (input/output costs)
+- License type
+- Creation date
+
+Common models include:
+- **Llama 3.1/3.2** series (Meta) - Various sizes from 3B to 405B
+- **Mistral/Mixtral** series (Mistral AI) - Efficient and high-quality
+- **Qwen** series - Strong multilingual support
+- **Gemma** (Google) - Open models
+- And many more!
+
+**Fallback models** are available if the API is temporarily unavailable.
+
+### Viewing Model Information
+
+1. Tap the info icon (ℹ️) in the app bar
+2. Browse models grouped by organization
+3. Expand any model to see detailed information:
+   - Model ID and display name
+   - Organization and type
+   - Context length capacity
+   - License information
+   - Pricing (input/output per 1M tokens)
+   - Creation date
+
+### Using System Prompts
+
+System prompts help define the AI's behavior and personality. Examples:
+- "You are a helpful coding assistant that provides clear explanations"
+- "You are a creative writer who speaks in poetic language"
+- "You are a professional technical support agent"
+- "You always respond in the style of Shakespeare"
+
+### Editing Conversation Settings
+
+1. Open a conversation
+2. Tap the tune icon (⚙️) in the app bar
+3. Modify the title, model, or system prompt
+4. Tap "Save" to apply changes
 
 ### Managing Conversations
 
@@ -116,19 +176,23 @@ curl -X POST "https://api.together.xyz/v1/chat/completions" \
 ### Models
 - **ChatMessage**: Represents a single message in the conversation (user or assistant)
 - **ChatResponse**: Parses API responses from Together AI
-- **Conversation**: Represents a complete conversation with metadata (id, title, messages, timestamps)
+- **Conversation**: Represents a complete conversation with metadata (id, title, messages, timestamps, model, system prompt)
+- **LLMModel**: Defines available language models with descriptions
 
 ### Services
-- **ChatService**: Handles API communication with Together AI
+- **ChatService**: Handles API communication with Together AI, supports multiple models and system prompts
+- **ModelService**: Fetches available models from Together AI API
 - **StorageService**: Manages secure storage of the API key and conversation history using flutter_secure_storage
 
 ### Screens
 - **ChatScreen**: Main chat interface with message list, input field, and conversation management
 - **SettingsScreen**: API key configuration and management
+- **ModelInfoScreen**: Detailed information page showing all available models with specs
 
 ### Widgets
 - **MessageBubble**: Reusable chat bubble component for displaying messages
 - **ConversationSidebar**: Drawer widget showing conversation history with navigation and deletion
+- **ConversationSettingsDialog**: Dialog for creating/editing conversation settings (title, model, system prompt)
 
 ## Data Persistence
 
@@ -140,6 +204,8 @@ All conversations are stored securely on the device using `flutter_secure_storag
   - User-defined title
   - Complete message history
   - Creation and update timestamps
+  - Selected LLM model
+  - Custom system prompt (optional)
 
 Data persists across app restarts and is automatically loaded when the app launches.
 

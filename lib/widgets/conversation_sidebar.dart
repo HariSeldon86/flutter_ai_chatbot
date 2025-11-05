@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/conversation.dart';
+import '../constants/llm_models.dart';
 import 'package:intl/intl.dart';
 
 class ConversationSidebar extends StatelessWidget {
@@ -8,6 +9,8 @@ class ConversationSidebar extends StatelessWidget {
   final Function(Conversation) onSelectConversation;
   final Function(String) onDeleteConversation;
   final VoidCallback onNewConversation;
+  final VoidCallback onDeleteAllConversations;
+  final List<LLMModel> availableModels;
 
   const ConversationSidebar({
     super.key,
@@ -16,6 +19,8 @@ class ConversationSidebar extends StatelessWidget {
     required this.onSelectConversation,
     required this.onDeleteConversation,
     required this.onNewConversation,
+    required this.onDeleteAllConversations,
+    required this.availableModels,
   });
 
   @override
@@ -132,9 +137,25 @@ class ConversationSidebar extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          subtitle: Text(
-                            '${conversation.messages.length} messages • ${_formatDate(conversation.updatedAt)}',
-                            style: const TextStyle(fontSize: 12),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${conversation.messages.length} messages • ${_formatDate(conversation.updatedAt)}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              Text(
+                                LLMModels.getDisplayName(
+                                  availableModels,
+                                  conversation.model,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.blue.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                           onTap: () => onSelectConversation(conversation),
                         ),
@@ -142,6 +163,48 @@ class ConversationSidebar extends StatelessWidget {
                     },
                   ),
           ),
+          if (conversations.isNotEmpty) ...[
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Delete All Conversations'),
+                      content: Text(
+                        'Are you sure you want to delete all ${conversations.length} conversation${conversations.length > 1 ? 's' : ''}? This action cannot be undone.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text(
+                            'Delete All',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true) {
+                    onDeleteAllConversations();
+                  }
+                },
+                icon: const Icon(Icons.delete_sweep),
+                label: const Text('Delete All'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  minimumSize: const Size(double.infinity, 48),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

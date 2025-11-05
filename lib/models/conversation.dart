@@ -6,6 +6,8 @@ class Conversation {
   final List<ChatMessage> messages;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String model;
+  final String? systemPrompt;
 
   Conversation({
     required this.id,
@@ -13,6 +15,8 @@ class Conversation {
     required this.messages,
     required this.createdAt,
     required this.updatedAt,
+    this.model = 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+    this.systemPrompt,
   });
 
   Map<String, dynamic> toJson() {
@@ -22,6 +26,8 @@ class Conversation {
       'messages': messages.map((msg) => msg.toJson()).toList(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'model': model,
+      'systemPrompt': systemPrompt,
     };
   }
 
@@ -34,6 +40,10 @@ class Conversation {
           .toList(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      model:
+          json['model'] as String? ??
+          'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+      systemPrompt: json['systemPrompt'] as String?,
     );
   }
 
@@ -43,6 +53,8 @@ class Conversation {
     List<ChatMessage>? messages,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? model,
+    String? systemPrompt,
   }) {
     return Conversation(
       id: id ?? this.id,
@@ -50,6 +62,8 @@ class Conversation {
       messages: messages ?? this.messages,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      model: model ?? this.model,
+      systemPrompt: systemPrompt ?? this.systemPrompt,
     );
   }
 }

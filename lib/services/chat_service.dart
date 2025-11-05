@@ -7,7 +7,8 @@ class ChatService {
   final String apiKey;
 
   ChatService({required this.apiKey})
-    : _dio = Dio( // initializer list
+    : _dio = Dio(
+        // initializer list
         BaseOptions(
           baseUrl: 'https://api.together.xyz/v1',
           headers: {
@@ -17,14 +18,24 @@ class ChatService {
         ),
       );
 
-  Future<String> sendMessage(List<ChatMessage> messages) async {
+  Future<String> sendMessage(
+    List<ChatMessage> messages, {
+    String model = 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+    String? systemPrompt,
+  }) async {
     try {
+      // Build messages list with optional system prompt
+      final messagesList = <Map<String, dynamic>>[];
+
+      if (systemPrompt != null && systemPrompt.isNotEmpty) {
+        messagesList.add({'role': 'system', 'content': systemPrompt});
+      }
+
+      messagesList.addAll(messages.map((msg) => msg.toJson()).toList());
+
       final response = await _dio.post(
         '/chat/completions',
-        data: {
-          'model': 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo', // TODO generalize model as user input ?
-          'messages': messages.map((msg) => msg.toJson()).toList(), // TODO add system prompt as user input ?
-        },
+        data: {'model': model, 'messages': messagesList},
       );
 
       final chatResponse = ChatResponse.fromJson(response.data);

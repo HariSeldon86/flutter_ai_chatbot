@@ -3,9 +3,13 @@ import '../models/chat_message.dart';
 import '../models/conversation.dart';
 import '../services/chat_service.dart';
 import '../services/storage_service.dart';
+import '../services/model_service.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/conversation_sidebar.dart';
+import '../widgets/conversation_settings_dialog.dart';
+import '../constants/llm_models.dart';
 import 'settings_screen.dart';
+import 'model_info_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -21,12 +25,14 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
 
   ChatService? _chatService;
+  ModelService? _modelService;
   bool _isLoading = false;
   bool _isSending = false;
   String? _error;
 
   List<Conversation> _conversations = [];
   Conversation? _currentConversation;
+  List<LLMModel> _availableModels = [];
 
   @override
   void initState() {
@@ -41,7 +47,11 @@ class _ChatScreenState extends State<ChatScreen> {
       final apiKey = await _storageService.getApiKey();
       if (apiKey != null && apiKey.isNotEmpty) {
         _chatService = ChatService(apiKey: apiKey);
+        _modelService = ModelService(apiKey: apiKey);
         setState(() => _error = null);
+
+        // Load available models
+        await _loadAvailableModels();
       } else {
         setState(
           () => _error = 'No API key found. Please configure it in Settings.',
@@ -51,6 +61,23 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() => _error = 'Error loading API key: $e');
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadAvailableModels() async {
+    try {
+      if (_modelService != null) {
+        final models = await _modelService!.fetchModels();
+        setState(() {
+          _availableModels = models;
+        });
+      }
+    } catch (e) {
+      // Fallback to default models if API call fails
+      setState(() {
+        _availableModels = LLMModels.getFallbackModels();
+      });
+      debugPrint('Error loading models: $e');
     }
   }
 
@@ -87,45 +114,24 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _createNewConversation({bool closeDrawer = true}) async {
-    final titleController = TextEditingController();
-    final title = await showDialog<String>(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('New Conversation'),
-        content: TextField(
-          controller: titleController,
-          decoration: const InputDecoration(
-            labelText: 'Conversation Title',
-            hintText: 'Enter a title for this conversation',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
-          textCapitalization: TextCapitalization.sentences,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (titleController.text.trim().isNotEmpty) {
-                Navigator.of(context).pop(titleController.text.trim());
-              }
-            },
-            child: const Text('Create'),
-          ),
-        ],
+      builder: (context) => ConversationSettingsDialog(
+        initialTitle: '',
+        initialModel: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+        availableModels: _availableModels,
       ),
     );
 
-    if (title != null && title.isNotEmpty) {
+    if (result != null) {
       final newConversation = Conversation(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: title,
+        title: result['title'] as String,
         messages: [],
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        model: result['model'] as String,
+        systemPrompt: result['systemPrompt'] as String?,
       );
 
       setState(() {
@@ -142,6 +148,36 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _editConversationSettings() async {
+    if (_currentConversation == null) return;
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => ConversationSettingsDialog(
+        initialTitle: _currentConversation!.title,
+        initialModel: _currentConversation!.model,
+        initialSystemPrompt: _currentConversation!.systemPrompt,
+        availableModels: _availableModels,
+      ),
+    );
+
+    if (result != null) {
+      final updatedConversation = _currentConversation!.copyWith(
+        title: result['title'] as String,
+        model: result['model'] as String,
+        systemPrompt: result['systemPrompt'] as String?,
+        updatedAt: DateTime.now(),
+      );
+
+      setState(() {
+        _currentConversation = updatedConversation;
+      });
+
+      await _storageService.saveConversation(updatedConversation);
+      await _loadConversations();
+    }
+  }
+
   Future<void> _deleteConversation(String conversationId) async {
     await _storageService.deleteConversation(conversationId);
     await _loadConversations();
@@ -151,6 +187,23 @@ class _ChatScreenState extends State<ChatScreen> {
         _currentConversation = null;
         _messages.clear();
       });
+    }
+  }
+
+  Future<void> _deleteAllConversations() async {
+    await _storageService.deleteAllConversations();
+    await _loadConversations();
+
+    setState(() {
+      _currentConversation = null;
+      _messages.clear();
+    });
+
+    if (mounted) {
+      Navigator.of(context).pop(); // Close drawer
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All conversations deleted')),
+      );
     }
   }
 
@@ -178,6 +231,7 @@ class _ChatScreenState extends State<ChatScreen> {
         messages: [],
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
       );
 
       setState(() {
@@ -199,7 +253,11 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
-      final response = await _chatService!.sendMessage(_messages);
+      final response = await _chatService!.sendMessage(
+        _messages,
+        model: _currentConversation!.model,
+        systemPrompt: _currentConversation!.systemPrompt,
+      );
 
       setState(() {
         _messages.add(ChatMessage(role: 'assistant', content: response));
@@ -257,6 +315,25 @@ class _ChatScreenState extends State<ChatScreen> {
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      ModelInfoScreen(models: _availableModels),
+                ),
+              );
+            },
+            tooltip: 'Model Information',
+          ),
+          if (_currentConversation != null)
+            IconButton(
+              icon: const Icon(Icons.tune),
+              onPressed: _editConversationSettings,
+              tooltip: 'Conversation Settings',
+            ),
           if (_messages.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_outline),
@@ -276,6 +353,8 @@ class _ChatScreenState extends State<ChatScreen> {
         onSelectConversation: _loadConversation,
         onDeleteConversation: _deleteConversation,
         onNewConversation: () => _createNewConversation(closeDrawer: true),
+        onDeleteAllConversations: _deleteAllConversations,
+        availableModels: _availableModels,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -315,15 +394,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.chat, size: 64, color: Colors.grey.shade400),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Start a new conversation",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
                       onPressed: () =>
@@ -343,6 +413,38 @@ class _ChatScreenState extends State<ChatScreen> {
             )
           : Column(
               children: [
+                if (_currentConversation != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      border: Border(
+                        bottom: BorderSide(color: Colors.blue.shade200),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Colors.blue.shade700,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Model: ${LLMModels.getDisplayName(_availableModels, _currentConversation!.model)}${_currentConversation!.systemPrompt != null ? " • Custom system prompt" : ""}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 Expanded(
                   child: _messages.isEmpty
                       ? Center(
