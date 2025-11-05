@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
+import '../services/model_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -43,19 +44,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     setState(() => _isLoading = true);
+
+    // Test the API connection before saving
     try {
+      final modelService = ModelService(apiKey: _apiKeyController.text.trim());
+      await modelService.testConnection();
+
+      // If connection is successful, save the API key
       await _storageService.saveApiKey(_apiKeyController.text.trim());
       setState(() => _hasApiKey = true);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('API key saved successfully')),
+          const SnackBar(
+            content: Text(
+              'API key saved successfully and connection verified!',
+            ),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error saving API key: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('API connection failed: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     } finally {
       setState(() => _isLoading = false);

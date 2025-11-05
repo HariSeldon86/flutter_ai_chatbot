@@ -77,38 +77,6 @@ class ModelPricing {
 }
 
 class LLMModels {
-  // Fallback models in case API is unavailable
-  static const List<Map<String, dynamic>> _fallbackModels = [
-    {
-      'id': 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
-      'display_name': 'Llama 3.1 8B Turbo',
-      'organization': 'Meta',
-      'type': 'chat',
-      'context_length': 8192,
-      'created': 1692896905,
-    },
-    {
-      'id': 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
-      'display_name': 'Llama 3.1 70B Turbo',
-      'organization': 'Meta',
-      'type': 'chat',
-      'context_length': 8192,
-      'created': 1692896905,
-    },
-    {
-      'id': 'mistralai/Mistral-7B-Instruct-v0.3',
-      'display_name': 'Mistral 7B v0.3',
-      'organization': 'Mistral AI',
-      'type': 'chat',
-      'context_length': 8192,
-      'created': 1692896905,
-    },
-  ];
-
-  static List<LLMModel> getFallbackModels() {
-    return _fallbackModels.map((json) => LLMModel.fromJson(json)).toList();
-  }
-
   static LLMModel? findById(List<LLMModel> models, String id) {
     try {
       return models.firstWhere((model) => model.id == id);

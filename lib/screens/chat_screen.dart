@@ -73,10 +73,15 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     } catch (e) {
-      // Fallback to default models if API call fails
-      setState(() {
-        _availableModels = LLMModels.getFallbackModels();
-      });
+      // Show error to user - API connection required
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load models: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       debugPrint('Error loading models: $e');
     }
   }
@@ -308,6 +313,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: _currentConversation?.title != null
             ? Text('AI Chatbot > ${_currentConversation!.title}')
@@ -503,7 +509,12 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ],
                   ),
-                  padding: const EdgeInsets.all(8.0),
+                  padding: EdgeInsets.only(
+                    left: 8.0,
+                    right: 8.0,
+                    top: 8.0,
+                    bottom: 8.0 + MediaQuery.of(context).padding.bottom,
+                  ),
                   child: Row(
                     children: [
                       Expanded(

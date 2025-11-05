@@ -49,4 +49,33 @@ class ModelService {
       throw Exception('Error fetching models: $e');
     }
   }
+
+  /// Test API connection by attempting to fetch models
+  Future<void> testConnection() async {
+    try {
+      final response = await _dio.get('/models');
+
+      if (response.statusCode != 200) {
+        throw Exception('Invalid API response');
+      }
+
+      if (response.data is! List) {
+        throw Exception('Unexpected response format');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        if (e.response?.statusCode == 401) {
+          throw Exception('Invalid API key');
+        } else if (e.response?.statusCode == 403) {
+          throw Exception('Access forbidden - check your API key');
+        } else {
+          throw Exception('API Error (${e.response?.statusCode})');
+        }
+      } else {
+        throw Exception('Network error - check your internet connection');
+      }
+    } catch (e) {
+      throw Exception('Connection test failed: $e');
+    }
+  }
 }
