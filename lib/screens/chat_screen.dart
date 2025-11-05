@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
+import '../models/conversation.dart';
 import '../services/chat_service.dart';
 import '../services/storage_service.dart';
 import '../widgets/message_bubble.dart';
+import '../widgets/conversation_sidebar.dart';
 import 'settings_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -23,10 +25,14 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isSending = false;
   String? _error;
 
+  List<Conversation> _conversations = [];
+  Conversation? _currentConversation;
+
   @override
   void initState() {
     super.initState();
     _initializeChatService();
+    _loadConversations();
   }
 
   Future<void> _initializeChatService() async {
@@ -48,6 +54,106 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _loadConversations() async {
+    final conversations = await _storageService.getConversations();
+    setState(() {
+      _conversations = conversations;
+    });
+  }
+
+  Future<void> _saveCurrentConversation() async {
+    if (_currentConversation == null || _messages.isEmpty) return;
+
+    final updatedConversation = _currentConversation!.copyWith(
+      messages: List.from(_messages),
+      updatedAt: DateTime.now(),
+    );
+
+    await _storageService.saveConversation(updatedConversation);
+    setState(() {
+      _currentConversation = updatedConversation;
+    });
+    await _loadConversations();
+  }
+
+  void _loadConversation(Conversation conversation) {
+    setState(() {
+      _currentConversation = conversation;
+      _messages.clear();
+      _messages.addAll(conversation.messages);
+    });
+    Navigator.of(context).pop(); // Close drawer
+    _scrollToBottom();
+  }
+
+  Future<void> _createNewConversation({bool closeDrawer = true}) async {
+    final titleController = TextEditingController();
+    final title = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('New Conversation'),
+        content: TextField(
+          controller: titleController,
+          decoration: const InputDecoration(
+            labelText: 'Conversation Title',
+            hintText: 'Enter a title for this conversation',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (titleController.text.trim().isNotEmpty) {
+                Navigator.of(context).pop(titleController.text.trim());
+              }
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+
+    if (title != null && title.isNotEmpty) {
+      final newConversation = Conversation(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: title,
+        messages: [],
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      setState(() {
+        _currentConversation = newConversation;
+        _messages.clear();
+      });
+
+      await _storageService.saveConversation(newConversation);
+      await _loadConversations();
+
+      if (mounted && closeDrawer) {
+        Navigator.of(context).pop(); // Close drawer
+      }
+    }
+  }
+
+  Future<void> _deleteConversation(String conversationId) async {
+    await _storageService.deleteConversation(conversationId);
+    await _loadConversations();
+
+    if (_currentConversation?.id == conversationId) {
+      setState(() {
+        _currentConversation = null;
+        _messages.clear();
+      });
+    }
+  }
+
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
     if (_chatService == null) {
@@ -57,6 +163,26 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       );
       return;
+    }
+
+    // Create a new conversation if none exists
+    if (_currentConversation == null) {
+      final firstMessage = _messageController.text.trim();
+      final title = firstMessage.length > 50
+          ? '${firstMessage.substring(0, 47)}...'
+          : firstMessage;
+
+      final newConversation = Conversation(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: title,
+        messages: [],
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      setState(() {
+        _currentConversation = newConversation;
+      });
     }
 
     final userMessage = ChatMessage(
@@ -80,6 +206,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _isSending = false;
       });
 
+      await _saveCurrentConversation();
       _scrollToBottom();
     } catch (e) {
       setState(() => _isSending = false);
@@ -105,7 +232,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _clearChat() {
-    setState(() => _messages.clear());
+    setState(() {
+      _messages.clear();
+      _currentConversation = null;
+    });
   }
 
   Future<void> _navigateToSettings() async {
@@ -121,7 +251,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Chatbot'),
+        title: _currentConversation?.title != null
+            ? Text('AI Chatbot > ${_currentConversation!.title}')
+            : const Text('AI Chatbot'),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
@@ -137,6 +269,13 @@ class _ChatScreenState extends State<ChatScreen> {
             tooltip: 'Settings',
           ),
         ],
+      ),
+      drawer: ConversationSidebar(
+        conversations: _conversations,
+        currentConversationId: _currentConversation?.id,
+        onSelectConversation: _loadConversation,
+        onDeleteConversation: _deleteConversation,
+        onNewConversation: () => _createNewConversation(closeDrawer: true),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -163,6 +302,40 @@ class _ChatScreenState extends State<ChatScreen> {
                       onPressed: _navigateToSettings,
                       icon: const Icon(Icons.settings),
                       label: const Text('Go to Settings'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : _currentConversation == null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.chat, size: 64, color: Colors.grey.shade400),
+                    const SizedBox(height: 16),
+                    Text(
+                      "Start a new conversation",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () =>
+                          _createNewConversation(closeDrawer: false),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Start New Conversation'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
                     ),
                   ],
                 ),
