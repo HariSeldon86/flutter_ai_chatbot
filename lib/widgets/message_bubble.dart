@@ -14,87 +14,136 @@ class MessageBubble extends StatelessWidget {
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        padding: const EdgeInsets.all(12),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        decoration: BoxDecoration(
-          color: isUser
-              ? Theme.of(context).colorScheme.primaryContainer
-              : Theme.of(context).colorScheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: isUser
-            ? Text(
-                message.content,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+      child: Row(
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isUser) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 8, top: 4),
+              child: CircleAvatar(
+                radius: 16,
+                backgroundColor: Theme.of(context).colorScheme.secondary,
+                child: Icon(
+                  Icons.smart_toy,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.onSecondary,
                 ),
-              )
-            : MarkdownBody(
-                data: message.content,
-                selectable: true,
-                shrinkWrap: true,
-                builders: {'code': CodeBlockBuilder(context)},
-                styleSheet: MarkdownStyleSheet(
-                  p: TextStyle(
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                  ),
-                  code: TextStyle(
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  codeblockDecoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.outline.withValues(alpha: 0.2),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            padding: const EdgeInsets.all(12),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.75,
+            ),
+            decoration: BoxDecoration(
+              color: isUser
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Theme.of(context).colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: isUser
+                ? Text(
+                    message.content,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
-                  ),
-                  codeblockPadding: const EdgeInsets.all(12),
-                  blockquote: TextStyle(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSecondaryContainer.withValues(alpha: 0.7),
-                    fontStyle: FontStyle.italic,
-                  ),
-                  blockquoteDecoration: BoxDecoration(
-                    border: Border(
-                      left: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 4,
+                  )
+                : MarkdownBody(
+                    data: message.content,
+                    selectable: true,
+                    shrinkWrap: true,
+                    builders: {'code': CodeBlockBuilder(context)},
+                    styleSheet: MarkdownStyleSheet(
+                      p: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSecondaryContainer,
+                      ),
+                      code: TextStyle(
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontFamily: 'monospace',
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      codeblockDecoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.outline.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      codeblockPadding: const EdgeInsets.all(12),
+                      blockquote: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSecondaryContainer
+                            .withValues(alpha: 0.7),
+                        fontStyle: FontStyle.italic,
+                      ),
+                      blockquoteDecoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 4,
+                          ),
+                        ),
+                      ),
+                      h1: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSecondaryContainer,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      h2: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSecondaryContainer,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      h3: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSecondaryContainer,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      listBullet: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSecondaryContainer,
                       ),
                     ),
                   ),
-                  h1: TextStyle(
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  h2: TextStyle(
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  h3: TextStyle(
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  listBullet: TextStyle(
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                  ),
+          ),
+          if (isUser) ...[
+            const SizedBox(width: 8),
+            Padding(
+              padding: const EdgeInsets.only(right: 8, top: 4),
+              child: CircleAvatar(
+                radius: 16,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                child: Icon(
+                  Icons.person,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
+            ),
+          ],
+        ],
       ),
     );
   }

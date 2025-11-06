@@ -1,6 +1,6 @@
 # Flutter AI Chatbot
 
-A Flutter application that integrates with Together AI's API to provide an AI-powered chatbot experience using Meta-Llama-3.1-8B-Instruct-Turbo model.
+A Flutter application that integrates with Together AI's API to provide an AI-powered chatbot experience using Together’s open-source models (see [List All Models](https://docs.together.ai/reference/models-1)).
 
 ## Features
 
@@ -77,7 +77,9 @@ flutter run
 
 - **dio**: ^5.9.0 - HTTP client for API requests
 - **flutter_secure_storage**: ^9.2.4 - Secure storage for API key and conversations
-- **intl**: ^0.19.0 - Internationalization and date formatting
+- **intl**: ^0.20.2 - Internationalization and date formatting
+- **flutter_markdown_plus**: ^1.0.5 - Markdown rendering
+- **markdown**: ^7.3.0 - Markdown rendering
 
 ## Usage
 
@@ -101,14 +103,6 @@ Models are **dynamically loaded** from the Together AI API. The app fetches:
 - License type
 - Creation date
 
-Common models include:
-- **Llama 3.1/3.2** series (Meta) - Various sizes from 3B to 405B
-- **Mistral/Mixtral** series (Mistral AI) - Efficient and high-quality
-- **Qwen** series - Strong multilingual support
-- **Gemma** (Google) - Open models
-- And many more!
-
-**Fallback models** are available if the API is temporarily unavailable.
 
 ### Viewing Model Information
 
@@ -156,8 +150,8 @@ System prompts help define the AI's behavior and personality. Examples:
 The app uses Together AI's Chat Completions API with **streaming support**:
 
 - **Endpoint**: `https://api.together.xyz/v1/chat/completions`
-- **Model**: `meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo` (default, customizable)
-- **Authentication**: Bearer token (API key)
+- **Model**: Selected from available list
+- **Authentication**: Bearer token (your API key)
 - **Streaming**: Enabled by default for real-time responses
 
 ### Streaming Feature
