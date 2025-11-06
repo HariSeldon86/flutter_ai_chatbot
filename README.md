@@ -5,6 +5,7 @@ A Flutter application that integrates with Together AI's API to provide an AI-po
 ## Features
 
 - 🤖 AI-powered chat using Together AI API
+- ⚡ **Real-time streaming responses** - See AI responses appear word-by-word as they're generated
 - 🔐 Secure API key storage using flutter_secure_storage
 - 💬 Clean and intuitive chat interface
 - 📚 Conversation history with persistent storage
@@ -29,9 +30,10 @@ lib/
 ├── models/                             # Data models
 │   ├── chat_message.dart              # Chat message model
 │   ├── chat_response.dart             # API response model
+│   ├── chat_stream_response.dart      # Streaming API response model
 │   └── conversation.dart              # Conversation model with persistence
 ├── services/                           # Business logic & API
-│   ├── chat_service.dart              # Together AI API integration
+│   ├── chat_service.dart              # Together AI API integration with streaming support
 │   ├── model_service.dart             # Fetch available models from API
 │   └── storage_service.dart           # Secure storage for API key & conversations
 ├── screens/                            # UI screens
@@ -151,13 +153,24 @@ System prompts help define the AI's behavior and personality. Examples:
 
 ## API Integration
 
-The app uses Together AI's Chat Completions API:
+The app uses Together AI's Chat Completions API with **streaming support**:
 
 - **Endpoint**: `https://api.together.xyz/v1/chat/completions`
-- **Model**: `meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo`
+- **Model**: `meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo` (default, customizable)
 - **Authentication**: Bearer token (API key)
+- **Streaming**: Enabled by default for real-time responses
 
-### Example API Request
+### Streaming Feature
+
+The app implements real-time streaming responses using Server-Sent Events (SSE):
+
+- Responses appear word-by-word as they're generated
+- Provides immediate feedback and better user experience
+- Uses `stream: true` parameter in API requests
+- Parses SSE events with `data:` prefixes
+- Updates UI in real-time as chunks arrive
+
+### Example API Request (Streaming)
 
 ```bash
 curl -X POST "https://api.together.xyz/v1/chat/completions" \
@@ -167,20 +180,36 @@ curl -X POST "https://api.together.xyz/v1/chat/completions" \
        "model": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
        "messages": [
          {"role": "user", "content": "What are some fun things to do in New York?"}
-       ]
+       ],
+       "stream": true
      }'
+```
+
+### Streaming Response Format
+
+The API returns Server-Sent Events with JSON payloads:
+
+```
+data: {"choices":[{"index":0,"delta":{"content":" A"}}],"id":"85ffbb8a6d2c4340-EWR","finish_reason":null,...}
+data: {"choices":[{"index":0,"delta":{"content":":"}}],"id":"85ffbb8a6d2c4340-EWR","finish_reason":null,...}
+data: {"choices":[{"index":0,"delta":{"content":" Sure"}}],"id":"85ffbb8a6d2c4340-EWR","finish_reason":null,...}
+data: [DONE]
 ```
 
 ## Architecture
 
 ### Models
 - **ChatMessage**: Represents a single message in the conversation (user or assistant)
-- **ChatResponse**: Parses API responses from Together AI
+- **ChatResponse**: Parses standard API responses from Together AI
+- **ChatStreamResponse**: Parses streaming Server-Sent Events (SSE) responses
 - **Conversation**: Represents a complete conversation with metadata (id, title, messages, timestamps, model, system prompt)
 - **LLMModel**: Defines available language models with descriptions
 
 ### Services
-- **ChatService**: Handles API communication with Together AI, supports multiple models and system prompts
+- **ChatService**: Handles API communication with Together AI
+  - `sendMessageStream()`: Streams responses in real-time using SSE
+  - `sendMessage()`: Standard non-streaming API call (for backward compatibility)
+  - Supports multiple models and custom system prompts
 - **ModelService**: Fetches available models from Together AI API
 - **StorageService**: Manages secure storage of the API key and conversation history using flutter_secure_storage
 

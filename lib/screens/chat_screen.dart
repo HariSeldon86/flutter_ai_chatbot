@@ -257,22 +257,47 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.clear();
     _scrollToBottom();
 
+    // Add a placeholder message for the assistant response
+    final assistantMessage = ChatMessage(role: 'assistant', content: '');
+    setState(() {
+      _messages.add(assistantMessage);
+    });
+
     try {
-      final response = await _chatService!.sendMessage(
-        _messages,
+      final stream = _chatService!.sendMessageStream(
+        _messages.where((msg) => msg.content.isNotEmpty).toList(),
         model: _currentConversation!.model,
         systemPrompt: _currentConversation!.systemPrompt,
       );
 
+      String fullResponse = '';
+
+      await for (final chunk in stream) {
+        fullResponse += chunk;
+
+        // Update the assistant message in place
+        setState(() {
+          _messages[_messages.length - 1] = ChatMessage(
+            role: 'assistant',
+            content: fullResponse,
+          );
+        });
+
+        _scrollToBottom();
+      }
+
       setState(() {
-        _messages.add(ChatMessage(role: 'assistant', content: response));
         _isSending = false;
       });
 
       await _saveCurrentConversation();
       _scrollToBottom();
     } catch (e) {
-      setState(() => _isSending = false);
+      // Remove the placeholder message on error
+      setState(() {
+        _messages.removeLast();
+        _isSending = false;
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(
