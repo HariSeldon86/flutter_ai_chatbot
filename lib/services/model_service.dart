@@ -26,6 +26,12 @@ class ModelService {
             .where((model) => model.type == 'chat') // Only chat models
             .toList();
 
+        // drop models with 'Unknown' or '' organization
+        models.removeWhere(
+          (model) =>
+              model.organization == 'Unknown' || model.organization == '',
+        );
+
         // Sort by organization and display name
         models.sort((a, b) {
           final orgCompare = a.organization.compareTo(b.organization);

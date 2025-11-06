@@ -312,238 +312,235 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        title: _currentConversation?.title != null
-            ? Text('AI Chatbot > ${_currentConversation!.title}')
-            : const Text('AI Chatbot'),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      ModelInfoScreen(models: _availableModels),
-                ),
-              );
-            },
-            tooltip: 'Model Information',
-          ),
-          if (_currentConversation != null)
-            IconButton(
-              icon: const Icon(Icons.tune),
-              onPressed: _editConversationSettings,
-              tooltip: 'Conversation Settings',
-            ),
-          if (_messages.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: _clearChat,
-              tooltip: 'Clear chat',
-            ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _navigateToSettings,
-            tooltip: 'Settings',
-          ),
-        ],
-      ),
-      drawer: ConversationSidebar(
-        conversations: _conversations,
-        currentConversationId: _currentConversation?.id,
-        onSelectConversation: _loadConversation,
-        onDeleteConversation: _deleteConversation,
-        onNewConversation: () => _createNewConversation(closeDrawer: true),
-        onDeleteAllConversations: _deleteAllConversations,
-        availableModels: _availableModels,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.orange,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _error!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: _navigateToSettings,
-                      icon: const Icon(Icons.settings),
-                      label: const Text('Go to Settings'),
-                    ),
-                  ],
-                ),
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: _currentConversation?.title != null
+              // ? Text('AI Chatbot > ${_currentConversation!.title}')
+              ? Text(_currentConversation!.title)
+              : const Text('AI Chatbot'),
+          centerTitle: false,
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          actions: [
+            if (_messages.isNotEmpty)
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: _clearChat,
+                tooltip: 'Clear chat',
               ),
-            )
-          : _currentConversation == null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.chat, size: 64, color: Colors.grey.shade400),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () =>
-                          _createNewConversation(closeDrawer: false),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Start New Conversation'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
+            if (_currentConversation != null)
+              IconButton(
+                icon: const Icon(Icons.tune),
+                onPressed: _editConversationSettings,
+                tooltip: 'Conversation Settings',
+              ),
+            IconButton(
+              icon: const Icon(Icons.info_outline),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ModelInfoScreen(models: _availableModels),
+                  ),
+                );
+              },
+              tooltip: 'Model Information',
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: _navigateToSettings,
+              tooltip: 'Settings',
+            ),
+          ],
+        ),
+        drawer: ConversationSidebar(
+          conversations: _conversations,
+          currentConversationId: _currentConversation?.id,
+          onSelectConversation: _loadConversation,
+          onDeleteConversation: _deleteConversation,
+          onNewConversation: () => _createNewConversation(closeDrawer: true),
+          onDeleteAllConversations: _deleteAllConversations,
+          availableModels: _availableModels,
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: _navigateToSettings,
+                        icon: const Icon(Icons.settings),
+                        label: const Text('Go to Settings'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : _currentConversation == null
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.chat, size: 64, color: Colors.grey.shade400),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () =>
+                            _createNewConversation(closeDrawer: false),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Start New Conversation'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            )
-          : Column(
-              children: [
-                if (_currentConversation != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      border: Border(
-                        bottom: BorderSide(color: Colors.blue.shade200),
+              )
+            : Column(
+                children: [
+                  if (_currentConversation != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        border: Border(
+                          bottom: BorderSide(color: Colors.blue.shade200),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: Colors.blue.shade700,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Model: ${LLMModels.getDisplayName(_availableModels, _currentConversation!.model)}${_currentConversation!.systemPrompt != null ? " • Custom system prompt" : ""}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue.shade900,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  Expanded(
+                    child: _messages.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 64,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Start a conversation',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            controller: _scrollController,
+                            padding: const EdgeInsets.all(8),
+                            itemCount: _messages.length,
+                            itemBuilder: (context, index) {
+                              return MessageBubble(message: _messages[index]);
+                            },
+                          ),
+                  ),
+                  if (_isSending)
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Row(
+                        children: [
+                          SizedBox(width: 8),
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          SizedBox(width: 8),
+                          Text('AI is thinking...'),
+                        ],
+                      ),
+                    ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.shade300,
+                          blurRadius: 4,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(8.0),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: 16,
-                          color: Colors.blue.shade700,
+                        Expanded(
+                          child: TextField(
+                            controller: _messageController,
+                            decoration: const InputDecoration(
+                              hintText: 'Type a message...',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                            maxLines: null,
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => _sendMessage(),
+                            enabled: !_isSending,
+                          ),
                         ),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Model: ${LLMModels.getDisplayName(_availableModels, _currentConversation!.model)}${_currentConversation!.systemPrompt != null ? " • Custom system prompt" : ""}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue.shade900,
-                            ),
-                          ),
+                        FloatingActionButton(
+                          onPressed: _isSending ? null : _sendMessage,
+                          child: const Icon(Icons.send),
                         ),
                       ],
                     ),
                   ),
-                Expanded(
-                  child: _messages.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.chat_bubble_outline,
-                                size: 64,
-                                color: Colors.grey.shade400,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Start a conversation',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.all(8),
-                          itemCount: _messages.length,
-                          itemBuilder: (context, index) {
-                            return MessageBubble(message: _messages[index]);
-                          },
-                        ),
-                ),
-                if (_isSending)
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Row(
-                      children: [
-                        SizedBox(width: 8),
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        SizedBox(width: 8),
-                        Text('AI is thinking...'),
-                      ],
-                    ),
-                  ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.shade300,
-                        blurRadius: 4,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
-                  ),
-                  padding: EdgeInsets.only(
-                    left: 8.0,
-                    right: 8.0,
-                    top: 8.0,
-                    bottom: 8.0 + MediaQuery.of(context).padding.bottom,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _messageController,
-                          decoration: const InputDecoration(
-                            hintText: 'Type a message...',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                          ),
-                          maxLines: null,
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => _sendMessage(),
-                          enabled: !_isSending,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      FloatingActionButton(
-                        onPressed: _isSending ? null : _sendMessage,
-                        child: const Icon(Icons.send),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
     );
   }
 

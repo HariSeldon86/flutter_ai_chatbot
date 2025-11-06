@@ -28,35 +28,32 @@ class ConversationSidebar extends StatelessWidget {
     return Drawer(
       child: Column(
         children: [
-          // DrawerHeader(
-          //   decoration: BoxDecoration(
-          //     color: Theme.of(context).colorScheme.inversePrimary,
-          //   ),
-          //   child: const Column(
-          //     crossAxisAlignment: CrossAxisAlignment.start,
-          //     mainAxisAlignment: MainAxisAlignment.end,
-          //     children: [
-          //       Icon(Icons.chat_bubble_outline, size: 48),
-          //       SizedBox(height: 8),
-          //       Text(
-          //         'Conversations',
-          //         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          //       ),
-          //     ],
-          //   ),
-          // ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: OutlinedButton.icon(
-              onPressed: onNewConversation,
-              icon: const Icon(Icons.add),
-              label: const Text('New Conversation'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 48),
-              ),
+          DrawerHeader(
+            // decoration: BoxDecoration(
+            //   color: Theme.of(context).colorScheme.inversePrimary,
+            // ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Conversations',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ],
             ),
           ),
-          const Divider(),
+          // const Divider(),
           Expanded(
             child: conversations.isEmpty
                 ? Center(
@@ -163,48 +160,61 @@ class ConversationSidebar extends StatelessWidget {
                     },
                   ),
           ),
-          if (conversations.isNotEmpty) ...[
-            const Divider(),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Delete All Conversations'),
-                      content: Text(
-                        'Are you sure you want to delete all ${conversations.length} conversation${conversations.length > 1 ? 's' : ''}? This action cannot be undone.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(true),
-                          child: const Text(
-                            'Delete All',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirmed == true) {
-                    onDeleteAllConversations();
-                  }
-                },
-                icon: const Icon(Icons.delete_sweep),
-                label: const Text('Delete All'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  minimumSize: const Size(double.infinity, 48),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                OutlinedButton.icon(
+                  onPressed: onNewConversation,
+                  icon: const Icon(Icons.add),
+                  label: const Text('New Conversation'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
                 ),
-              ),
+                if (conversations.isNotEmpty) ...[
+                  SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Delete All Conversations'),
+                          content: Text(
+                            'Are you sure you want to delete all ${conversations.length} conversation${conversations.length > 1 ? 's' : ''}? This action cannot be undone.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text(
+                                'Delete All',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirmed == true) {
+                        onDeleteAllConversations();
+                      }
+                    },
+                    icon: const Icon(Icons.delete_sweep),
+                    label: const Text('Delete All'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
+          ),
         ],
       ),
     );

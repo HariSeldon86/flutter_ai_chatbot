@@ -15,51 +15,53 @@ class ModelInfoScreen extends StatelessWidget {
       groupedModels.putIfAbsent(model.organization, () => []).add(model);
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Available Models'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: models.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.cloud_off, size: 64, color: Colors.grey.shade400),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No models available',
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              itemCount: groupedModels.length,
-              itemBuilder: (context, index) {
-                final org = groupedModels.keys.elementAt(index);
-                final orgModels = groupedModels[org]!;
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Available Models'),
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        ),
+        body: models.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: Text(
-                        org,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
+                    Icon(Icons.cloud_off, size: 64, color: Colors.grey.shade400),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No models available',
+                      style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                itemCount: groupedModels.length,
+                itemBuilder: (context, index) {
+                  final org = groupedModels.keys.elementAt(index);
+                  final orgModels = groupedModels[org]!;
+      
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: Text(
+                          org,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                         ),
                       ),
-                    ),
-                    ...orgModels.map((model) => ModelCard(model: model)),
-                    const SizedBox(height: 8),
-                  ],
-                );
-              },
-            ),
+                      ...orgModels.map((model) => ModelCard(model: model)),
+                      const SizedBox(height: 8),
+                    ],
+                  );
+                },
+              ),
+      ),
     );
   }
 }

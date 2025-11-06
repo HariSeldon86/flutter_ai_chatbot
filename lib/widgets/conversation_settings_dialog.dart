@@ -80,14 +80,14 @@ class _ConversationSettingsDialogState
                           style: const TextStyle(fontWeight: FontWeight.w500),
                           overflow: TextOverflow.ellipsis,
                         ),
-                        Text(
-                          " • ${model.description}",
-                          style: TextStyle(
-                            // fontSize: 12,
-                            color: Colors.grey.shade500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        // Text(
+                        //   " • ${model.description}",
+                        //   style: TextStyle(
+                        //     // fontSize: 12,
+                        //     color: Colors.grey.shade500,
+                        //   ),
+                        //   overflow: TextOverflow.ellipsis,
+                        // ),
                       ],
                     ),
                   ),
