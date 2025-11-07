@@ -152,6 +152,28 @@ class ConversationSidebar extends StatelessWidget {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
+                              if (_getTotalTokens(conversation) > 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.data_usage,
+                                        size: 11,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Total: ${_getTotalTokens(conversation)} tokens',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade600,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                             ],
                           ),
                           onTap: () => onSelectConversation(conversation),
@@ -233,5 +255,18 @@ class ConversationSidebar extends StatelessWidget {
     } else {
       return DateFormat('MMM d').format(date);
     }
+  }
+
+  int _getTotalTokens(Conversation conversation) {
+    int total = 0;
+    for (var message in conversation.messages) {
+      if (message.inputTokens != null) {
+        total += message.inputTokens!;
+      }
+      if (message.outputTokens != null) {
+        total += message.outputTokens!;
+      }
+    }
+    return total;
   }
 }

@@ -2,8 +2,14 @@ class ChatResponse {
   final String id;
   final String model;
   final List<Choice> choices;
+  final Usage? usage;
 
-  ChatResponse({required this.id, required this.model, required this.choices});
+  ChatResponse({
+    required this.id,
+    required this.model,
+    required this.choices,
+    this.usage,
+  });
 
   factory ChatResponse.fromJson(Map<String, dynamic> json) {
     return ChatResponse(
@@ -12,6 +18,7 @@ class ChatResponse {
       choices: (json['choices'] as List)
           .map((choice) => Choice.fromJson(choice))
           .toList(),
+      usage: json['usage'] != null ? Usage.fromJson(json['usage']) : null,
     );
   }
 }
@@ -46,6 +53,26 @@ class Message {
     return Message(
       role: json['role'] as String,
       content: json['content'] as String,
+    );
+  }
+}
+
+class Usage {
+  final int promptTokens;
+  final int completionTokens;
+  final int totalTokens;
+
+  Usage({
+    required this.promptTokens,
+    required this.completionTokens,
+    required this.totalTokens,
+  });
+
+  factory Usage.fromJson(Map<String, dynamic> json) {
+    return Usage(
+      promptTokens: json['prompt_tokens'] as int,
+      completionTokens: json['completion_tokens'] as int,
+      totalTokens: json['total_tokens'] as int,
     );
   }
 }

@@ -5,6 +5,7 @@ class ChatStreamResponse {
   final String? generatedText;
   final int created;
   final String object;
+  final StreamUsage? usage;
 
   ChatStreamResponse({
     required this.id,
@@ -13,6 +14,7 @@ class ChatStreamResponse {
     this.generatedText,
     required this.created,
     required this.object,
+    this.usage,
   });
 
   factory ChatStreamResponse.fromJson(Map<String, dynamic> json) {
@@ -25,6 +27,7 @@ class ChatStreamResponse {
       generatedText: json['generated_text'] as String?,
       created: json['created'] as int,
       object: json['object'] as String,
+      usage: json['usage'] != null ? StreamUsage.fromJson(json['usage']) : null,
     );
   }
 }
@@ -55,6 +58,26 @@ class Delta {
     return Delta(
       role: json['role'] as String?,
       content: json['content'] as String?,
+    );
+  }
+}
+
+class StreamUsage {
+  final int promptTokens;
+  final int completionTokens;
+  final int totalTokens;
+
+  StreamUsage({
+    required this.promptTokens,
+    required this.completionTokens,
+    required this.totalTokens,
+  });
+
+  factory StreamUsage.fromJson(Map<String, dynamic> json) {
+    return StreamUsage(
+      promptTokens: json['prompt_tokens'] as int,
+      completionTokens: json['completion_tokens'] as int,
+      totalTokens: json['total_tokens'] as int,
     );
   }
 }

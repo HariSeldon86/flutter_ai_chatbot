@@ -5,6 +5,20 @@ import '../models/chat_message.dart';
 import '../models/chat_response.dart';
 import '../models/chat_stream_response.dart';
 
+class ChatStreamResult {
+  final Stream<String> contentStream;
+  final Future<TokenUsage?> tokenUsage;
+
+  ChatStreamResult({required this.contentStream, required this.tokenUsage});
+}
+
+class TokenUsage {
+  final int inputTokens;
+  final int outputTokens;
+
+  TokenUsage({required this.inputTokens, required this.outputTokens});
+}
+
 class ChatService {
   final Dio _dio;
   final String apiKey;
@@ -21,11 +35,36 @@ class ChatService {
         ),
       );
 
-  Stream<String> sendMessageStream(
+  ChatStreamResult sendMessageStream(
     List<ChatMessage> messages, {
     String model = 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
     String? systemPrompt,
-  }) async* {
+  }) {
+    final StreamController<String> contentController =
+        StreamController<String>();
+    final Completer<TokenUsage?> usageCompleter = Completer<TokenUsage?>();
+
+    _performStreamRequest(
+      messages,
+      model,
+      systemPrompt,
+      contentController,
+      usageCompleter,
+    );
+
+    return ChatStreamResult(
+      contentStream: contentController.stream,
+      tokenUsage: usageCompleter.future,
+    );
+  }
+
+  Future<void> _performStreamRequest(
+    List<ChatMessage> messages,
+    String model,
+    String? systemPrompt,
+    StreamController<String> contentController,
+    Completer<TokenUsage?> usageCompleter,
+  ) async {
     try {
       // Build messages list with optional system prompt
       final messagesList = <Map<String, dynamic>>[];
@@ -38,7 +77,12 @@ class ChatService {
 
       final response = await _dio.post<ResponseBody>(
         '/chat/completions',
-        data: {'model': model, 'messages': messagesList, 'stream': true},
+        data: {
+          'model': model,
+          'messages': messagesList,
+          'stream': true,
+          'stream_options': {'include_usage': true},
+        },
         options: Options(responseType: ResponseType.stream),
       );
 
@@ -51,6 +95,8 @@ class ChatService {
           .cast<List<int>>()
           .transform(utf8.decoder)
           .transform(const LineSplitter());
+
+      TokenUsage? finalUsage;
 
       await for (final line in stringStream) {
         if (line.isEmpty || !line.startsWith('data: ')) continue;
@@ -65,10 +111,18 @@ class ChatService {
           final json = jsonDecode(data);
           final streamResponse = ChatStreamResponse.fromJson(json);
 
+          // Check for usage information
+          if (streamResponse.usage != null) {
+            finalUsage = TokenUsage(
+              inputTokens: streamResponse.usage!.promptTokens,
+              outputTokens: streamResponse.usage!.completionTokens,
+            );
+          }
+
           if (streamResponse.choices.isNotEmpty) {
             final content = streamResponse.choices.first.delta.content;
             if (content != null && content.isNotEmpty) {
-              yield content;
+              contentController.add(content);
             }
           }
         } catch (e) {
@@ -76,20 +130,27 @@ class ChatService {
           continue;
         }
       }
+
+      contentController.close();
+      usageCompleter.complete(finalUsage);
     } on DioException catch (e) {
-      if (e.response != null) {
-        throw Exception(
-          'API Error: ${e.response?.statusCode} - ${e.response?.data}',
-        );
-      } else {
-        throw Exception('Network Error: ${e.message}');
-      }
+      contentController.addError(
+        e.response != null
+            ? Exception(
+                'API Error: ${e.response?.statusCode} - ${e.response?.data}',
+              )
+            : Exception('Network Error: ${e.message}'),
+      );
+      contentController.close();
+      usageCompleter.completeError(e);
     } catch (e) {
-      throw Exception('Unexpected Error: $e');
+      contentController.addError(Exception('Unexpected Error: $e'));
+      contentController.close();
+      usageCompleter.completeError(e);
     }
   }
 
-  Future<String> sendMessage(
+  Future<ChatMessage> sendMessage(
     List<ChatMessage> messages, {
     String model = 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
     String? systemPrompt,
@@ -112,7 +173,12 @@ class ChatService {
       final chatResponse = ChatResponse.fromJson(response.data);
 
       if (chatResponse.choices.isNotEmpty) {
-        return chatResponse.choices.first.message.content;
+        return ChatMessage(
+          role: 'assistant',
+          content: chatResponse.choices.first.message.content,
+          inputTokens: chatResponse.usage?.promptTokens,
+          outputTokens: chatResponse.usage?.completionTokens,
+        );
       } else {
         throw Exception('No response from API');
       }

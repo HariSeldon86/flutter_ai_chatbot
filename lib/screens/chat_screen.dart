@@ -264,7 +264,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     try {
-      final stream = _chatService!.sendMessageStream(
+      final streamResult = _chatService!.sendMessageStream(
         _messages.where((msg) => msg.content.isNotEmpty).toList(),
         model: _currentConversation!.model,
         systemPrompt: _currentConversation!.systemPrompt,
@@ -272,7 +272,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       String fullResponse = '';
 
-      await for (final chunk in stream) {
+      await for (final chunk in streamResult.contentStream) {
         fullResponse += chunk;
 
         // Update the assistant message in place
@@ -284,6 +284,21 @@ class _ChatScreenState extends State<ChatScreen> {
         });
 
         _scrollToBottom();
+      }
+
+      // Wait for token usage
+      final tokenUsage = await streamResult.tokenUsage;
+
+      // Update message with token usage
+      if (tokenUsage != null) {
+        setState(() {
+          _messages[_messages.length - 1] = ChatMessage(
+            role: 'assistant',
+            content: fullResponse,
+            inputTokens: tokenUsage.inputTokens,
+            outputTokens: tokenUsage.outputTokens,
+          );
+        });
       }
 
       setState(() {
@@ -504,7 +519,29 @@ class _ChatScreenState extends State<ChatScreen> {
                             padding: const EdgeInsets.all(8),
                             itemCount: _messages.length,
                             itemBuilder: (context, index) {
-                              return MessageBubble(message: _messages[index]);
+                              // Calculate cumulative token usage up to this message
+                              int cumulativeInput = 0;
+                              int cumulativeOutput = 0;
+
+                              for (int i = 0; i <= index; i++) {
+                                if (_messages[i].inputTokens != null) {
+                                  cumulativeInput += _messages[i].inputTokens!;
+                                }
+                                if (_messages[i].outputTokens != null) {
+                                  cumulativeOutput +=
+                                      _messages[i].outputTokens!;
+                                }
+                              }
+
+                              return MessageBubble(
+                                message: _messages[index],
+                                cumulativeInputTokens: cumulativeInput > 0
+                                    ? cumulativeInput
+                                    : null,
+                                cumulativeOutputTokens: cumulativeOutput > 0
+                                    ? cumulativeOutput
+                                    : null,
+                              );
                             },
                           ),
                   ),
