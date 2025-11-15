@@ -58,7 +58,10 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     } catch (e) {
-      setState(() => _error = 'Error loading API key: $e');
+      setState(
+        () => _error =
+            'Error loading API key. This may be due to secure storage issues on your device. Please try clearing app data or reinstalling the app. Error details: $e',
+      );
     } finally {
       setState(() => _isLoading = false);
     }
