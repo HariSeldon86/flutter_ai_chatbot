@@ -8,6 +8,9 @@ class Conversation {
   final DateTime updatedAt;
   final String model;
   final String? systemPrompt;
+  final double? temperature;
+  final String? jsonSchema;
+  final int? contextLength;
 
   Conversation({
     required this.id,
@@ -17,6 +20,9 @@ class Conversation {
     required this.updatedAt,
     this.model = 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
     this.systemPrompt,
+    this.temperature,
+    this.jsonSchema,
+    this.contextLength,
   });
 
   Map<String, dynamic> toJson() {
@@ -28,6 +34,9 @@ class Conversation {
       'updatedAt': updatedAt.toIso8601String(),
       'model': model,
       'systemPrompt': systemPrompt,
+      'temperature': temperature,
+      'jsonSchema': jsonSchema,
+      'contextLength': contextLength,
     };
   }
 
@@ -44,6 +53,9 @@ class Conversation {
           json['model'] as String? ??
           'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
       systemPrompt: json['systemPrompt'] as String?,
+      temperature: json['temperature'] as double?,
+      jsonSchema: json['jsonSchema'] as String?,
+      contextLength: json['contextLength'] as int?,
     );
   }
 
@@ -55,6 +67,9 @@ class Conversation {
     DateTime? updatedAt,
     String? model,
     String? systemPrompt,
+    double? temperature,
+    String? jsonSchema,
+    int? contextLength,
   }) {
     return Conversation(
       id: id ?? this.id,
@@ -64,6 +79,9 @@ class Conversation {
       updatedAt: updatedAt ?? this.updatedAt,
       model: model ?? this.model,
       systemPrompt: systemPrompt ?? this.systemPrompt,
+      temperature: temperature ?? this.temperature,
+      jsonSchema: jsonSchema ?? this.jsonSchema,
+      contextLength: contextLength ?? this.contextLength,
     );
   }
 }

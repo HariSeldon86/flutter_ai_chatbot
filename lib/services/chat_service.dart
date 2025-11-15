@@ -39,6 +39,8 @@ class ChatService {
     List<ChatMessage> messages, {
     String model = 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
     String? systemPrompt,
+    double? temperature,
+    String? jsonSchema,
   }) {
     final StreamController<String> contentController =
         StreamController<String>();
@@ -48,6 +50,8 @@ class ChatService {
       messages,
       model,
       systemPrompt,
+      temperature,
+      jsonSchema,
       contentController,
       usageCompleter,
     );
@@ -62,6 +66,8 @@ class ChatService {
     List<ChatMessage> messages,
     String model,
     String? systemPrompt,
+    double? temperature,
+    String? jsonSchema,
     StreamController<String> contentController,
     Completer<TokenUsage?> usageCompleter,
   ) async {
@@ -75,14 +81,32 @@ class ChatService {
 
       messagesList.addAll(messages.map((msg) => msg.toJson()).toList());
 
+      final requestData = {
+        'model': model,
+        'messages': messagesList,
+        'stream': true,
+        'stream_options': {'include_usage': true},
+      };
+
+      if (temperature != null) {
+        requestData['temperature'] = temperature;
+      }
+
+      if (jsonSchema != null && jsonSchema.isNotEmpty) {
+        try {
+          final schema = jsonDecode(jsonSchema);
+          requestData['response_format'] = {
+            'type': 'json_object',
+            'schema': schema,
+          };
+        } catch (e) {
+          // Invalid JSON schema, skip it
+        }
+      }
+
       final response = await _dio.post<ResponseBody>(
         '/chat/completions',
-        data: {
-          'model': model,
-          'messages': messagesList,
-          'stream': true,
-          'stream_options': {'include_usage': true},
-        },
+        data: requestData,
         options: Options(responseType: ResponseType.stream),
       );
 
@@ -154,6 +178,8 @@ class ChatService {
     List<ChatMessage> messages, {
     String model = 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
     String? systemPrompt,
+    double? temperature,
+    String? jsonSchema,
   }) async {
     try {
       // Build messages list with optional system prompt
@@ -165,10 +191,25 @@ class ChatService {
 
       messagesList.addAll(messages.map((msg) => msg.toJson()).toList());
 
-      final response = await _dio.post(
-        '/chat/completions',
-        data: {'model': model, 'messages': messagesList},
-      );
+      final requestData = {'model': model, 'messages': messagesList};
+
+      if (temperature != null) {
+        requestData['temperature'] = temperature;
+      }
+
+      if (jsonSchema != null && jsonSchema.isNotEmpty) {
+        try {
+          final schema = jsonDecode(jsonSchema);
+          requestData['response_format'] = {
+            'type': 'json_object',
+            'schema': schema,
+          };
+        } catch (e) {
+          // Invalid JSON schema, skip it
+        }
+      }
+
+      final response = await _dio.post('/chat/completions', data: requestData);
 
       final chatResponse = ChatResponse.fromJson(response.data);
 

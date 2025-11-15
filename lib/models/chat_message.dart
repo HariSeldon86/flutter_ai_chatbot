@@ -3,12 +3,14 @@ class ChatMessage {
   final String content;
   final int? inputTokens;
   final int? outputTokens;
+  final String? model;
 
   ChatMessage({
     required this.role,
     required this.content,
     this.inputTokens,
     this.outputTokens,
+    this.model,
   });
 
   Map<String, dynamic> toJson() {
@@ -17,6 +19,7 @@ class ChatMessage {
       'content': content,
       'inputTokens': inputTokens,
       'outputTokens': outputTokens,
+      'model': model,
     };
   }
 
@@ -26,6 +29,7 @@ class ChatMessage {
       content: json['content'] as String,
       inputTokens: json['inputTokens'] as int?,
       outputTokens: json['outputTokens'] as int?,
+      model: json['model'] as String?,
     );
   }
 
@@ -34,12 +38,14 @@ class ChatMessage {
     String? content,
     int? inputTokens,
     int? outputTokens,
+    String? model,
   }) {
     return ChatMessage(
       role: role ?? this.role,
       content: content ?? this.content,
       inputTokens: inputTokens ?? this.inputTokens,
       outputTokens: outputTokens ?? this.outputTokens,
+      model: model ?? this.model,
     );
   }
 }

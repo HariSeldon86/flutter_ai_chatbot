@@ -137,6 +137,9 @@ class _ChatScreenState extends State<ChatScreen> {
         updatedAt: DateTime.now(),
         model: result['model'] as String,
         systemPrompt: result['systemPrompt'] as String?,
+        temperature: result['temperature'] as double?,
+        jsonSchema: result['jsonSchema'] as String?,
+        contextLength: result['contextLength'] as int?,
       );
 
       setState(() {
@@ -162,6 +165,9 @@ class _ChatScreenState extends State<ChatScreen> {
         initialTitle: _currentConversation!.title,
         initialModel: _currentConversation!.model,
         initialSystemPrompt: _currentConversation!.systemPrompt,
+        initialTemperature: _currentConversation!.temperature,
+        initialJsonSchema: _currentConversation!.jsonSchema,
+        initialContextLength: _currentConversation!.contextLength,
         availableModels: _availableModels,
       ),
     );
@@ -171,6 +177,9 @@ class _ChatScreenState extends State<ChatScreen> {
         title: result['title'] as String,
         model: result['model'] as String,
         systemPrompt: result['systemPrompt'] as String?,
+        temperature: result['temperature'] as double?,
+        jsonSchema: result['jsonSchema'] as String?,
+        contextLength: result['contextLength'] as int?,
         updatedAt: DateTime.now(),
       );
 
@@ -258,16 +267,33 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     // Add a placeholder message for the assistant response
-    final assistantMessage = ChatMessage(role: 'assistant', content: '');
+    final assistantMessage = ChatMessage(
+      role: 'assistant',
+      content: '',
+      model: _currentConversation!.model,
+    );
     setState(() {
       _messages.add(assistantMessage);
     });
 
     try {
+      // Filter messages and apply context length limit
+      final messagesToSend = _messages
+          .where((msg) => msg.content.isNotEmpty)
+          .toList();
+      final contextLength = _currentConversation!.contextLength;
+      final limitedMessages = contextLength != null && contextLength > 0
+          ? messagesToSend.length > contextLength
+                ? messagesToSend.sublist(messagesToSend.length - contextLength)
+                : messagesToSend
+          : messagesToSend;
+
       final streamResult = _chatService!.sendMessageStream(
-        _messages.where((msg) => msg.content.isNotEmpty).toList(),
+        limitedMessages,
         model: _currentConversation!.model,
         systemPrompt: _currentConversation!.systemPrompt,
+        temperature: _currentConversation!.temperature,
+        jsonSchema: _currentConversation!.jsonSchema,
       );
 
       String fullResponse = '';
@@ -280,6 +306,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _messages[_messages.length - 1] = ChatMessage(
             role: 'assistant',
             content: fullResponse,
+            model: _currentConversation!.model,
           );
         });
 
@@ -297,6 +324,7 @@ class _ChatScreenState extends State<ChatScreen> {
             content: fullResponse,
             inputTokens: tokenUsage.inputTokens,
             outputTokens: tokenUsage.outputTokens,
+            model: _currentConversation!.model,
           );
         });
       }
@@ -334,11 +362,22 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  void _clearChat() {
+  Future<void> _clearChat() async {
+    if (_currentConversation == null) return;
+
+    final updatedConversation = _currentConversation!.copyWith(
+      messages: [],
+      updatedAt: DateTime.now(),
+    );
+
+    await _storageService.saveConversation(updatedConversation);
+
     setState(() {
       _messages.clear();
-      _currentConversation = null;
+      _currentConversation = updatedConversation;
     });
+
+    await _loadConversations();
   }
 
   Future<void> _navigateToSettings() async {
@@ -482,7 +521,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Model: ${LLMModels.getDisplayName(_availableModels, _currentConversation!.model)}${_currentConversation!.systemPrompt != null ? " • Custom system prompt" : ""}',
+                              'Model: ${LLMModels.getDisplayName(_availableModels, _currentConversation!.model)}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.blue.shade900,
